@@ -47,37 +47,33 @@ class PPCol:
 	@staticmethod
 	def make_fmtval(ctype):
 		"make format function based on type"
-		if ctype is None:
-			return str
-		if issubclass(ctype, HumanInt):
-			return lambda v: HumanInt.__format__(v, '.1h')
-		if issubclass(ctype, int):
-			return lambda v: format(v, ',d')
-		if issubclass(ctype, (float, Decimal)):
-			return lambda v: format(v, ',.2f')
-		return str
+		return next(
+			fn for types, fn in [
+				(HumanInt, lambda v: HumanInt.__format__(v, '.1h')),
+				(int, lambda v: format(v, ',d')),
+				((float, Decimal), lambda v: format(v, ',.2f')),
+				(object, str),
+			] if issubclass(ctype, types),
+		)
 
 	@staticmethod
 	def make_justify(ctype):
 		"make justify function based on type"
-		if ctype is None:
-			return str.ljust
-		if issubclass(ctype, (int, float, Decimal, dt.date, dt.datetime, dt.time, dt.timedelta)):
-			return str.rjust
-		return str.ljust
+		return str.rjust if issubclass(ctype, (int, float, Decimal, dt.date, dt.datetime, dt.time, dt.timedelta)) else str.ljust
 
 	@staticmethod
 	def creeate(col, infer_from=None):
 		"create a new instance depedning on parameter type"
 		if isinstance(col, PPCol): return col
 		if isinstance(col, tuple): return PPCol(col[0], col[1] or next((type(v) for v in (infer_from or []) if v != None), None))
-		return PPCol(None if col is None else str(col))
+		if isinstance(col, str): return PPCol(col, next((type(v) for v in (infer_from or []) if v != None), None))
+		return PPCol(col, str)
 
 	def __init__(self, title, ctype=None, fmtval=None, justify=None, width=1):
 		self.title = title or ''
 		self.width = max(width, len(self.title))
-		self.fmtval = fmtval or self.make_fmtval(ctype)
-		self._justify = justify or self.make_justify(ctype)
+		self.fmtval = fmtval or self.make_fmtval(ctype) if ctype else str
+		self._justify = justify or self.make_justify(ctype) if ctype else str.ljust
 
 	def justify(self, val):
 		"justify value"

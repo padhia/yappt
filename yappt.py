@@ -1,12 +1,13 @@
 "Yet another pretty print table"
 
-import re
 from decimal import Decimal
 import datetime as dt
 
 class HumanInt(int):
 	"An int subclass that formats values for human readability (similar to --human-readable option of the ls command)"
 	def __format__(self, spec):
+		import re
+
 		m = re.match(r'(\d*)(.\d+)?(h|s|e)$', spec)
 		if not m:
 			return int.__format__(self, spec)
@@ -116,6 +117,10 @@ def tabulate(rows, columns=None, none_value='', dash='-'):
 
 	yield from zip(*table) # transform table to rows
 
-def pprint(rows, columns, sep='  ', none_value='', dash='-'):
-	"tabulate and print rows of data"
-	print('\n'.join(sep.join(row) for row in tabulate(rows, columns, none_value=none_value, dash=dash)))
+def as_str(rows, columns=None, sep=' ', end='\n', none_value='', dash='-'):
+	"format tabular data and return as a string"
+	return end.join(sep.join(row) for row in tabulate(rows, columns, none_value=none_value, dash=dash))
+
+def pprint(rows, columns=None, sep=' ', end='\n', none_value='', dash='-', file=None, flush=False):
+	"print formatted tabular data"
+	print(as_str(rows, columns, sep=sep, end=end, none_value=none_value, dash=dash), file=file, flush=flush)

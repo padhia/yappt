@@ -14,7 +14,7 @@ cols = [('Human', HumanInt), ('Str', str), ('Int', int), ('Date', dt.date), ('Fl
 
 def test_explicit_types():
 	"test case: explicit types specified"
-	assert as_str(data, cols, none_value='?') == """\
+	assert tabulate(data, cols, none_value='?') == """\
 Human Str Int       Date    Float      Dec
 ----- --- --- ---------- -------- --------
 12.1K ABC  12 2017-12-20 5,555.67 1,222.44
@@ -22,14 +22,14 @@ Human Str Int       Date    Float      Dec
 
 def test_infer_types():
 	"test case: infer types from data"
-	assert as_str([[1234567, None]], ['C1', 'C2']) == """\
+	assert tabulate([[1234567, None]], ['C1', 'C2']) == """\
        C1 C2
 --------- --
 1,234,567   """
 
 def test_no_titles():
 	"test case: no column titles specified"
-	assert as_str([[123456, HumanInt(1234567890), 'abcd']]) == """\
+	assert tabulate([[123456, HumanInt(1234567890), 'abcd']]) == """\
 123,456 1.1G abcd"""
 
 pprint(data, cols, none_value='?')

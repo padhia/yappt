@@ -83,8 +83,8 @@ class PPCol:
 	def __str__(self):
 		return f"{self.title}:{self.width}"
 
-def tabulate(rows, columns=None, none_value='', dash='-'):
-	"Pretty print table data. Inspired by https://bitbucket.org/astanin/python-tabulate"
+def formatted(rows, columns=None, none_value='', dash='-'):
+	"return formatted rows. Inspired by https://bitbucket.org/astanin/python-formatted"
 
 	table = [list(r) for r in zip(*rows)]  # transpose
 	if not table and not columns:
@@ -117,10 +117,10 @@ def tabulate(rows, columns=None, none_value='', dash='-'):
 
 	yield from zip(*table) # transform table to rows
 
-def as_str(rows, columns=None, sep=' ', end='\n', none_value='', dash='-'):
-	"format tabular data and return as a string"
-	return end.join(sep.join(row) for row in tabulate(rows, columns, none_value=none_value, dash=dash))
+def tabulate(rows, columns=None, sep=' ', end='\n', none_value='', dash='-'):
+	"format and return table as a string"
+	return end.join(sep.join(row) for row in formatted(rows, columns, none_value=none_value, dash=dash))
 
 def pprint(rows, columns=None, sep=' ', end='\n', none_value='', dash='-', file=None, flush=False):
 	"print formatted tabular data"
-	print(as_str(rows, columns, sep=sep, end=end, none_value=none_value, dash=dash), file=file, flush=flush)
+	print(tabulate(rows, columns, sep=sep, end=end, none_value=none_value, dash=dash), file=file, flush=flush)

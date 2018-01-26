@@ -6,13 +6,14 @@ import datetime as dt
 class HumanInt(int):
 	"An int subclass that formats values for human readability (similar to --human-readable option of the ls command)"
 	def __format__(self, spec):
-		import re
-
-		m = re.match(r'(\d*)(.\d+)?(h|s|e)$', spec)
-		if not m:
-			return int.__format__(self, spec)
-
-		width, prec, typ = m.groups()
+		if spec == '':
+			width, prec, typ = None, '.1', 'h'
+		else:
+			import re
+			m = re.match(r'(\d*)(.\d+)?(h|s|e)$', spec)
+			if not m:
+				return int.__format__(self, spec)
+			width, prec, typ = m.groups()
 
 		if typ == 'e':
 			if prec:
@@ -28,7 +29,7 @@ class HumanInt(int):
 
 		else:
 			num = float(self)
-			base = 1000.0 if spec[-1] == 's' else 1024.0
+			base = 1000.0 if typ == 's' else 1024.0
 
 			for unit in ['', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y']:
 				if num < base:

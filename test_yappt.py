@@ -32,4 +32,58 @@ def test_no_titles():
 	assert tabulate([[123456, HumanInt(1234567890), 'abcd']]) == """\
 123,456 1.1G abcd"""
 
+
+class Node:
+	"Node of a tree; has zero or more children"
+	def __init__(self, name):
+		self.name, self.children = name, []
+	def __str__(self):
+		return str(self.name)
+
+root = Node(0)
+root.children = [Node(1), Node(2), Node(3)]
+root.children[0].children = [Node(11)]
+root.children[1].children = [Node(21), Node(22)]
+root.children[1].children[0].children = [Node(211), Node(212)]
+
+def test_tree_walk():
+	"Test tree walker with default style"
+	assert '\n'.join(t+str(n) for t, n in treeiter(root)) == """\
+0
+├─ 1
+│  └─ 11
+├─ 2
+│  ├─ 21
+│  │  ├─ 211
+│  │  └─ 212
+│  └─ 22
+└─ 3"""
+
+def test_tree_walk_ascii():
+	"Test tree walker with ascii style"
+	assert '\n'.join(t+str(n) for t, n in treeiter(root, style='ascii')) == """\
+0
+|- 1
+|  L_ 11
+|- 2
+|  |- 21
+|  |  |- 211
+|  |  L_ 212
+|  L_ 22
+L_ 3"""
+
+def test_tree_walk_raw():
+	"Test tree walker with no style"
+	assert '\n'.join(t+str(n) for t, n in treeiter(root, style=None)) == """\
+0
+T1
+IL11
+T2
+IT21
+IIT211
+IIL212
+IL22
+L3"""
+
+print('\n'.join(t+str(n) for t, n in treeiter(root)))
 pprint(data, cols, none_value='?')

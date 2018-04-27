@@ -64,7 +64,7 @@ class PPCol:
 		return str.rjust if issubclass(ctype, (int, float, Decimal, dt.date, dt.datetime, dt.time, dt.timedelta)) else str.ljust
 
 	@staticmethod
-	def creeate(col, infer_from=None):
+	def create(col, infer_from=None):
 		"create a new instance depedning on parameter type"
 		if isinstance(col, PPCol): return col
 		if isinstance(col, tuple): return PPCol(col[0], col[1] or next((type(v) for v in (infer_from or []) if v != None), None))
@@ -84,6 +84,47 @@ class PPCol:
 	def __str__(self):
 		return f"{self.title}:{self.width}"
 
+branch_styles = {
+	'fancy': {'T': "├─ ", 'L': "└─ ", 'I': "│  ", ' ': "   "}, # uses Unicode codepoints
+	'ascii': {'T': "|- ", 'L': "L_ ", 'I': "|  ", ' ': "   "}, # uses only ASCII characters
+}
+def treeiter(root, getch=lambda n: n.children, style='fancy'):
+	"""
+	returns an iterator that iterates in inpute iterator with pair (trunk, elem)
+	where elem is element from the input iterator and,
+	trunk is tree's current trunk at that element
+	"""
+	def extend(trunk, by):
+		"extend the trunk by a new brach"
+		return trunk.replace('L', ' ').replace('T', 'I') + by
+
+	def lpos_iter(in_iter):
+		"""
+		Returns an iterator that iterates with a pair (is_last, elm),
+		where elem is element from the input iterator and,
+		is_last is True if elem is the last element, False otherwise
+		"""
+		has_prev, prev = False, None
+		for child in in_iter:
+			if has_prev:
+				yield False, prev
+			has_prev, prev = True, child
+		if has_prev:
+			yield True, prev
+
+	def walk(node, trunk):
+		"Visits node and its children in order"
+		yield (trunk, node)
+		for is_last, child in lpos_iter(getch(node)):
+			yield from walk(child, extend(trunk, 'L' if is_last else 'T'))
+
+	def stylize(trunk):
+		"stylize the trunk if style is not None"
+		return trunk if style is None else ''.join(branch_styles[style][c] for c in trunk)
+
+	for trunk, node in walk(root, ''):
+		yield (stylize(trunk), node)
+
 def formatted(rows, columns=None, none_value='', dash='-'):
 	"return formatted rows. Inspired by https://bitbucket.org/astanin/python-formatted"
 
@@ -94,11 +135,11 @@ def formatted(rows, columns=None, none_value='', dash='-'):
 		if table:
 			if len(columns) != len(table):
 				raise ValueError('Number of columns in data must match column definitions')
-			columns = [PPCol.creeate(c, v) for c, v in zip(columns, table)]
+			columns = [PPCol.create(c, v) for c, v in zip(columns, table)]
 		else:
-			columns = [PPCol.creeate(c) for c in columns]
+			columns = [PPCol.create(c) for c in columns]
 	else:
-		columns = [PPCol.creeate('', v) for v in table]
+		columns = [PPCol.create('', v) for v in table]
 
 	# stage 1: transform table values to formatted string
 	table = [[c.fmtval(v) if v != None else none_value for v in vals] for c, vals in zip(columns, table)]

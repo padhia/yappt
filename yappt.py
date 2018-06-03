@@ -99,11 +99,7 @@ def treeiter(root, getch=lambda n: n.children, style='fancy'):
 		return trunk.replace('L', ' ').replace('T', 'I') + by
 
 	def lpos_iter(in_iter):
-		"""
-		Returns an iterator that iterates with a pair (is_last, elm),
-		where elem is element from the input iterator and,
-		is_last is True if elem is the last element, False otherwise
-		"""
+		"an iterator which returns tuple (lpos, item) where lpos is True if this is the last item from the original iterator"
 		has_prev, prev = False, None
 		for child in in_iter:
 			if has_prev:

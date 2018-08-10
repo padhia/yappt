@@ -50,12 +50,12 @@ class PPCol:
 	def make_fmtval(ctype):
 		"make format function based on type"
 		return next(
-			fn for types, fn in [
+			(fn for types, fn in [
 				(HumanInt, lambda v: HumanInt.__format__(v, '.1h')),
 				(int, lambda v: format(v, ',d')),
 				((float, Decimal), lambda v: format(v, ',.2f')),
 				(object, str),
-			] if issubclass(ctype, types),
+			] if issubclass(ctype, types)),
 		)
 
 	@staticmethod

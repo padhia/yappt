@@ -14,4 +14,4 @@ Yet Another Pretty Printer for Tables
 
 `yappt <https://bitbucket.org/padhia/yappt>`_ is a collection of functions and classes to pretty print tabular data.
 
-Development of this module was inspired by Inspired by https://bitbucket.org/astanin/python-tabulate"
+Development of this module was inspired by Inspired by https://bitbucket.org/astanin/python-tabulate

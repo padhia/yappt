@@ -4,9 +4,9 @@ yappt
 .. image:: https://img.shields.io/pypi/v/yappt.svg
      :target: https://pypi.python.org/pypi/yappt
      :alt: PyPi
-.. image:: https://img.shields.io/badge/License-GPL%20-blue.svg
-     :target: http://www.gnu.org/licenses/gpl
-     :alt: License
+.. image:: https://img.shields.io/badge/License-MIT-blue.svg
+     :target: https://opensource.org/licenses/MIT
+     :alt: MIT License
 .. image:: https://img.shields.io/pypi/pyversions/yappt.svg
      :alt: Python3.6+
 

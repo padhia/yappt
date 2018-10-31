@@ -8,7 +8,7 @@ yappt
      :target: http://www.gnu.org/licenses/gpl
      :alt: License
 .. image:: https://img.shields.io/pypi/pyversions/yappt.svg
-     :alt: Python3.3+
+     :alt: Python3.6+
 
 Yet Another Pretty Printer for Tables
 

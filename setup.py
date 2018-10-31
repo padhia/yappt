@@ -12,20 +12,17 @@ setup(
 	url='https://bitbucket.org/padhia/yappt',
 
 	author='Paresh Adhia',
-	version='0.1.0',
-	license='GPL',
+	version='0.1.1',
+	license='MIT',
+	python_requires='>=3.6',
 
 	py_modules=['yappt'],
 
 	classifiers=[
 		'Development Status :: 4 - Beta',
-		'License :: OSI Approved :: GNU General Public License (GPL)',
-
+		'License :: OSI Approved :: MIT License',
 		'Intended Audience :: Developers',
 		'Topic :: Utilities',
-
 		'Programming Language :: Python :: 3 :: Only',
-		'Programming Language :: Python :: 3.6',
-		'Programming Language :: Python :: 3.7',
 	],
 )

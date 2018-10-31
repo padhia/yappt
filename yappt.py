@@ -1,5 +1,8 @@
 "Yet another pretty print table"
 
+__author__ = "Paresh Adhia"
+__copyright__ = "Copyright 2016-2018, Paresh Adhia"
+
 from decimal import Decimal
 import datetime as dt
 
@@ -74,8 +77,8 @@ class PPCol:
 	def __init__(self, title, ctype=None, fmtval=None, justify=None, width=1):
 		self.title = title or ''
 		self.width = max(width, len(self.title))
-		self.fmtval = fmtval or self.make_fmtval(ctype) if ctype else str
-		self._justify = justify or self.make_justify(ctype) if ctype else str.ljust
+		self.fmtval = fmtval or (self.make_fmtval(ctype) if ctype else str)
+		self._justify = justify or (self.make_justify(ctype) if ctype else str.ljust)
 
 	def justify(self, val):
 		"justify value"

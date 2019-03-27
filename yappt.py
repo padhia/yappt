@@ -18,20 +18,22 @@ class HumanInt(int):
 				return int.__format__(self, spec)
 			width, prec, typ = m.groups()
 
+		sign, val = ('-', abs(self)) if self < 0 else ('', self)
+
 		if typ == 'e':
 			if prec:
 				raise ValueError('Precision not allowed in integer format specifier')
 
-			if self == 0:
+			if val == 0:
 				s = '0'
 			else:
 				for e in [12, 9, 6, 3, 0]:
-					if self % 10**e == 0:
+					if val % 10**e == 0:
 						break
-				s = (str(self // 10**e) + 'e' + str(e)) if e else str(self)
+				s = (str(val // 10**e) + 'e' + str(e)) if e else str(val)
 
 		else:
-			num = float(self)
+			num = float(val)
 			base = 1000.0 if typ == 's' else 1024.0
 
 			for unit in ['', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y']:
@@ -44,6 +46,8 @@ class HumanInt(int):
 			if '.' in s:
 				s = s.rstrip('0').rstrip('.')
 			s += unit
+
+		s = sign + s
 
 		return s.rjust(int(width)) if width else s
 

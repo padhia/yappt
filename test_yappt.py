@@ -12,6 +12,13 @@ data = [
 
 cols = [('Human', HumanInt), ('Str', str), ('Int', int), ('Date', dt.date), ('Float', float), ('Dec', Decimal)]
 
+def test_neg_num():
+	"test negative HumanInt values"
+	assert format(HumanInt(-340000), "h")    == "-332K"
+	assert format(HumanInt(-340000), "s")    == "-340K"
+	assert format(HumanInt(-340000), "e")    == "-340e3"
+	assert format(HumanInt(-340000), "9.2h") == " -332.03K"
+
 def test_explicit_types():
 	"test case: explicit types specified"
 	assert tabulate(data, cols, none_value='?') == """\

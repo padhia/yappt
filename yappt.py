@@ -1,10 +1,15 @@
 "Yet another pretty print table"
 
 __author__ = "Paresh Adhia"
-__copyright__ = "Copyright 2016-2018, Paresh Adhia"
+__copyright__ = "Copyright 2016-2019, Paresh Adhia"
 
+from typing import Type, Optional, Callable, Iterable, Any, List, TextIO, Union, Tuple, TypeVar
 from decimal import Decimal
 import datetime as dt
+
+T = TypeVar('T')
+TableRow = List[Optional[Any]]
+TableColumn = Iterable[T]
 
 class HumanInt(int):
 	"An int subclass that formats values for human readability (similar to --human-readable option of the ls command)"
@@ -54,37 +59,46 @@ class HumanInt(int):
 class PPCol:
 	"Pretty printer for a column within a table"
 	@staticmethod
-	def make_fmtval(ctype):
+	def make_fmtval(ctype) -> Callable[[Any], str]:
 		"make format function based on type"
-		return next(
-			(fn for types, fn in [
-				(HumanInt, lambda v: HumanInt.__format__(v, '.1h')),
-				(int, lambda v: format(v, ',d')),
-				((float, Decimal), lambda v: format(v, ',.2f')),
-				(object, str),
-			] if issubclass(ctype, types)),
-		)
+		if issubclass(ctype, HumanInt):
+			return lambda v: HumanInt.__format__(v, '.1h')
+		if issubclass(ctype, int):
+			return lambda v: format(v, ',d')
+		if issubclass(ctype, (float, Decimal)):
+			return lambda v: format(v, ',.2f')
+
+		return str
 
 	@staticmethod
-	def make_justify(ctype):
+	def make_justify(ctype: Type[Any]) -> Callable[[str], str]:
 		"make justify function based on type"
 		return str.rjust if issubclass(ctype, (int, float, Decimal, dt.date, dt.datetime, dt.time, dt.timedelta)) else str.ljust
 
 	@staticmethod
-	def create(col, infer_from=None):
+	def create(col: Union['PPCol', Tuple[str, Type[Any]], str, Any], infer_from: Optional[TableColumn] = None) -> 'PPCol':
 		"create a new instance depedning on parameter type"
-		if isinstance(col, PPCol): return col
-		if isinstance(col, tuple): return PPCol(col[0], col[1] or next((type(v) for v in (infer_from or []) if v != None), None))
-		if isinstance(col, str): return PPCol(col, next((type(v) for v in (infer_from or []) if v != None), None))
+		if isinstance(col, PPCol):
+			return col
+		if isinstance(col, tuple):
+			return PPCol(col[0], col[1] or next((type(v) for v in (infer_from or []) if v != None), None))
+		if isinstance(col, str):
+			return PPCol(col, next((type(v) for v in (infer_from or []) if v != None), None))
 		return PPCol(col, str)
 
-	def __init__(self, title, ctype=None, fmtval=None, justify=None, width=1):
-		self.title = title or ''
-		self.width = max(width, len(self.title))
-		self.fmtval = fmtval or (self.make_fmtval(ctype) if ctype else str)
-		self._justify = justify or (self.make_justify(ctype) if ctype else str.ljust)
+	def __init__(self,
+			title: str,
+			ctype: Optional[Type[Any]] = None,
+			fmtval: Optional[Callable[[Any], str]] = None,
+			justify: Optional[Callable[[str], str]] = None,
+			width: int = 1):
 
-	def justify(self, val):
+		self.title: str = title or ''
+		self.width: int = max(width, len(self.title))
+		self.fmtval: Callable[[Any], str] = fmtval or (self.make_fmtval(ctype) if ctype else str)
+		self._justify: Callable[[str], str] = justify or (self.make_justify(ctype) if ctype else str.ljust)
+
+	def justify(self, val: str) -> str:
 		"justify value"
 		return self._justify(val, self.width)
 
@@ -95,11 +109,13 @@ branch_styles = {
 	'fancy': {'T': "├─ ", 'L': "└─ ", 'I': "│  ", ' ': "   "}, # uses Unicode codepoints
 	'ascii': {'T': "|- ", 'L': "L_ ", 'I': "|  ", ' ': "   "}, # uses only ASCII characters
 }
-def treeiter(root, getch=lambda n: n.children, style='fancy'):
+def treeiter(root: T, getch: Callable[[T], Iterable[T]] = lambda n: n.children, style: str = 'fancy') -> Iterable[Tuple[str, T]]:
 	"""
-	returns an iterator that iterates in inpute iterator with pair (trunk, elem)
-	where elem is element from the input iterator and,
+	generates a pair (trunk, node) using supplied function to iterate over starting node (root)
+	where elem is element of any type that can be iterated over using getch function and,
+	getch is a function that returns an iterable of elements that are children or descendents of given node
 	trunk is tree's current trunk at that element
+	style can be either 'fancy' (default) or 'ascii' used for building "trunk"
 	"""
 	def extend(trunk, by):
 		"extend the trunk by a new brach"
@@ -128,7 +144,11 @@ def treeiter(root, getch=lambda n: n.children, style='fancy'):
 	for trunk, node in walk(root, ''):
 		yield (stylize(trunk), node)
 
-def formatted(rows, columns=None, none_value='', dash='-'):
+def formatted(
+		rows: Iterable[TableRow],
+		columns: Optional[List[str]] = None,
+		none_value: str = '',
+		dash: str = '-') -> Iterable[List[str]]:
 	"return formatted rows. Inspired by https://bitbucket.org/astanin/python-formatted"
 
 	table = [list(r) for r in zip(*rows)]  # transpose
@@ -162,10 +182,24 @@ def formatted(rows, columns=None, none_value='', dash='-'):
 
 	yield from zip(*table) # transform table to rows
 
-def tabulate(rows, columns=None, sep=' ', end='\n', none_value='', dash='-'):
+def tabulate(
+		rows: Iterable[TableRow],
+		columns: Optional[List[str]] = None,
+		sep: str = ' ',
+		end: str = '\n',
+		none_value: str = '',
+		dash: str = '-') -> str:
 	"format and return table as a string"
 	return end.join(sep.join(row) for row in formatted(rows, columns, none_value=none_value, dash=dash))
 
-def pprint(rows, columns=None, sep=' ', end='\n', none_value='', dash='-', file=None, flush=False):
+def pprint(
+		rows: Iterable[TableRow],
+		columns: Optional[List[str]] = None,
+		sep: str = ' ',
+		end: str = '\n',
+		none_value: str = '',
+		dash: str = '-',
+		file: Optional[TextIO] = None,
+		flush: bool = False) -> None:
 	"print formatted tabular data"
 	print(tabulate(rows, columns, sep=sep, end=end, none_value=none_value, dash=dash), file=file, flush=flush)

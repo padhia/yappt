@@ -59,7 +59,7 @@ class HumanInt(int):
 class PPCol:
 	"Pretty printer for a column within a table"
 	@staticmethod
-	def make_fmtval(ctype) -> Callable[[Any], str]:
+	def make_fmtval(ctype: type) -> Callable[[Any], str]:
 		"make format function based on type"
 		if issubclass(ctype, HumanInt):
 			return lambda v: HumanInt.__format__(v, '.1h')
@@ -71,24 +71,61 @@ class PPCol:
 		return str
 
 	@staticmethod
-	def make_justify(ctype: Type[Any]) -> Callable[[str], str]:
+	def make_justify(ctype: type) -> Callable[[str], str]:
 		"make justify function based on type"
 		return str.rjust if issubclass(ctype, (int, float, Decimal, dt.date, dt.datetime, dt.time, dt.timedelta)) else str.ljust
 
 	@staticmethod
-	def create(col: Union['PPCol', Tuple[str, Type[Any]], str, Any], infer_from: Optional[TableColumn] = None) -> 'PPCol':
-		"create a new instance depedning on parameter type"
+	def create(
+			col: Union['PPCol', Tuple[str, type], str, Any],
+			infer_from: Optional[TableColumn] = None,
+			title_encoded: bool = False,
+			sizefmt: str = '.1h',
+			pctfmt: str = '.1%') -> 'PPCol':
+		"""
+		create PPCol instance from parameter type.
+		Arguments:
+		col: can be (col-name, coltype) tuple, or col-name
+		infer_from: an optional list of column value to derive column type from
+		title_encoded: True if column title contains format characters (see below)
+		sizefmt: default format for displaying "size types"
+		pctfmt: default format for displaying "% types"
+
+		column title "n" can be encoded with following formatting characters:
+		n_ -> HumanInt
+		n% -> Fraction displayed as percentage. None: trailing % is not removed from the title
+		:n -> Left justified
+		n: -> right justified
+		:n: -> center aligned
+
+		Note: Except for "%", the encoding symbols are removed from the title name
+		"""
+
 		if isinstance(col, PPCol):
 			return col
-		if isinstance(col, tuple):
-			return PPCol(col[0], col[1] or next((type(v) for v in (infer_from or []) if v != None), None))
-		if isinstance(col, str):
-			return PPCol(col, next((type(v) for v in (infer_from or []) if v != None), None))
-		return PPCol(col, str)
+
+		n, t = col if isinstance(col, tuple) else (col, None)
+		if not t and infer_from:
+			t = next((type(v) for v in infer_from if v is not None), None)
+
+		f = j = None
+		if title_encoded:
+			if n.endswith('_'):
+				n, f = n[:-1], lambda v: format(HumanInt(v), sizefmt)
+			elif n.endswith('%'):
+				f = lambda v: format(v, pctfmt)
+			elif n.startswith(":") and n.endswith(":"):
+				n, j = n[1:-1], str.center
+			elif n.startswith(":"):
+				n, j = n[1:], str.ljust
+			elif n.endswith(":"):
+				n, j = n[:-1], str.rjust
+
+		return PPCol(n, ctype=t, fmtval=f, justify=j)
 
 	def __init__(self,
 			title: str,
-			ctype: Optional[Type[Any]] = None,
+			ctype: Optional[type] = None,
 			fmtval: Optional[Callable[[Any], str]] = None,
 			justify: Optional[Callable[[str], str]] = None,
 			width: int = 1):
@@ -96,7 +133,7 @@ class PPCol:
 		self.title: str = title or ''
 		self.width: int = max(width, len(self.title))
 		self.fmtval: Callable[[Any], str] = fmtval or (self.make_fmtval(ctype) if ctype else str)
-		self._justify: Callable[[str], str] = justify or (self.make_justify(ctype) if ctype else str.ljust)
+		self._justify: Callable[[str, int], str] = justify or (self.make_justify(ctype) if ctype else str.ljust)
 
 	def justify(self, val: str) -> str:
 		"justify value"
@@ -148,7 +185,8 @@ def formatted(
 		rows: Iterable[TableRow],
 		columns: Optional[List[str]] = None,
 		none_value: str = '',
-		dash: str = '-') -> Iterable[List[str]]:
+		dash: str = '-',
+		title_encoded: bool = False) -> Iterable[List[str]]:
 	"return formatted rows. Inspired by https://bitbucket.org/astanin/python-formatted"
 
 	table = [list(r) for r in zip(*rows)]  # transpose
@@ -158,9 +196,9 @@ def formatted(
 		if table:
 			if len(columns) != len(table):
 				raise ValueError('Number of columns in data must match column definitions')
-			columns = [PPCol.create(c, v) for c, v in zip(columns, table)]
+			columns = [PPCol.create(c, v, title_encoded=title_encoded) for c, v in zip(columns, table)]
 		else:
-			columns = [PPCol.create(c) for c in columns]
+			columns = [PPCol.create(c, title_encoded=title_encoded) for c in columns]
 	else:
 		columns = [PPCol.create('', v) for v in table]
 
@@ -188,9 +226,10 @@ def tabulate(
 		sep: str = ' ',
 		end: str = '\n',
 		none_value: str = '',
-		dash: str = '-') -> str:
+		dash: str = '-',
+		title_encoded: bool = False) -> str:
 	"format and return table as a string"
-	return end.join(sep.join(row) for row in formatted(rows, columns, none_value=none_value, dash=dash))
+	return end.join(sep.join(row) for row in formatted(rows, columns, none_value=none_value, dash=dash, title_encoded=title_encoded))
 
 def pprint(
 		rows: Iterable[TableRow],
@@ -199,7 +238,8 @@ def pprint(
 		end: str = '\n',
 		none_value: str = '',
 		dash: str = '-',
+		title_encoded: bool = False,
 		file: Optional[TextIO] = None,
 		flush: bool = False) -> None:
 	"print formatted tabular data"
-	print(tabulate(rows, columns, sep=sep, end=end, none_value=none_value, dash=dash), file=file, flush=flush)
+	print(tabulate(rows, columns, sep=sep, end=end, none_value=none_value, dash=dash, title_encoded=title_encoded), file=file, flush=flush)

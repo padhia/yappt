@@ -39,6 +39,13 @@ def test_no_titles():
 	assert tabulate([[123456, HumanInt(1234567890), 'abcd']]) == """\
 123,456 1.1G abcd"""
 
+def test_title_encoded():
+	"test case: encoded titles specified"
+	assert tabulate([[1024, 0.56, 'Y', 'Y', 'Y']], columns=["ColA_", "ColB%", ":ColC:", ":ColD", "ColE:"], title_encoded=True) == """\
+ColA ColB% ColC ColD ColE
+---- ----- ---- ---- ----
+  1K 56.0%  Y   Y       Y"""
+
 
 class Node:
 	"Node of a tree; has zero or more children"

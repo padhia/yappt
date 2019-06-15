@@ -12,7 +12,7 @@ setup(
 	url='https://bitbucket.org/padhia/yappt',
 
 	author='Paresh Adhia',
-	version='0.1.1',
+	version='0.2.0',
 	license='MIT',
 	python_requires='>=3.6',
 

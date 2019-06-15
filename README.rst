@@ -10,8 +10,8 @@ yappt
 .. image:: https://img.shields.io/pypi/pyversions/yappt.svg
      :alt: Python3.6+
 
-Yet Another Pretty Printer for Tables
+Yet Another Pretty Printer for Tables or Trees
 
-`yappt <https://bitbucket.org/padhia/yappt>`_ is a collection of functions and classes to pretty print tabular data.
+`yappt <https://bitbucket.org/padhia/yappt>`_ is a collection of functions and classes to pretty print tabular and tree-form data.
 
-Development of this module was inspired by Inspired by https://bitbucket.org/astanin/python-tabulate
+Development of this module was inspired by https://bitbucket.org/astanin/python-tabulate

@@ -3,7 +3,7 @@
 __author__ = "Paresh Adhia"
 __copyright__ = "Copyright 2016-2019, Paresh Adhia"
 
-from typing import Type, Optional, Callable, Iterable, Any, List, TextIO, Union, Tuple, TypeVar
+from typing import Optional, Callable, Iterable, Any, List, TextIO, Union, Tuple, TypeVar
 from decimal import Decimal
 import datetime as dt
 
@@ -11,9 +11,10 @@ T = TypeVar('T')
 TableRow = List[Optional[Any]]
 TableColumn = Iterable[T]
 
+
 class HumanInt(int):
 	"An int subclass that formats values for human readability (similar to --human-readable option of the ls command)"
-	def __format__(self, spec):
+	def __format__(self, spec: str = '') -> str:
 		if spec == '':
 			width, prec, typ = None, '.1', 'h'
 		else:
@@ -56,6 +57,7 @@ class HumanInt(int):
 
 		return s.rjust(int(width)) if width else s
 
+
 class PPCol:
 	"Pretty printer for a column within a table"
 	@staticmethod
@@ -71,17 +73,17 @@ class PPCol:
 		return str
 
 	@staticmethod
-	def make_justify(ctype: type) -> Callable[[str], str]:
+	def make_justify(ctype: type) -> Callable[[str, int], str]:
 		"make justify function based on type"
 		return str.rjust if issubclass(ctype, (int, float, Decimal, dt.date, dt.datetime, dt.time, dt.timedelta)) else str.ljust
 
 	@staticmethod
 	def create(
-			col: Union['PPCol', Tuple[str, type], str, Any],
-			infer_from: Optional[TableColumn] = None,
-			title_encoded: bool = False,
-			sizefmt: str = '.1h',
-			pctfmt: str = '.1%') -> 'PPCol':
+		col: Union['PPCol', Tuple[str, type], str, Any],
+		infer_from: Optional[TableColumn] = None,
+		title_encoded: bool = False,
+		sizefmt: str = '.1h',
+		pctfmt: str = '.1%') -> 'PPCol':
 		"""
 		create PPCol instance from parameter type.
 		Arguments:
@@ -105,10 +107,11 @@ class PPCol:
 			return col
 
 		n, t = col if isinstance(col, tuple) else (col, None)
-		if not t and infer_from:
+		if t is None and infer_from:
 			t = next((type(v) for v in infer_from if v is not None), None)
 
 		f = j = None
+		n = str(n)
 		if title_encoded:
 			if n.endswith('_'):
 				n, f = n[:-1], lambda v: format(HumanInt(v), sizefmt)
@@ -139,14 +142,20 @@ class PPCol:
 		"justify value"
 		return self._justify(val, self.width)
 
-	def __str__(self):
+	def __str__(self) -> str:
 		return f"{self.title}:{self.width}"
 
+
 branch_styles = {
-	'fancy': {'T': "├─ ", 'L': "└─ ", 'I': "│  ", ' ': "   "}, # uses Unicode codepoints
-	'ascii': {'T': "|- ", 'L': "L_ ", 'I': "|  ", ' ': "   "}, # uses only ASCII characters
+	'fancy': {'T': "├─ ", 'L': "└─ ", 'I': "│  ", ' ': "   "},  # uses Unicode codepoints
+	'ascii': {'T': "|- ", 'L': "L_ ", 'I': "|  ", ' ': "   "},  # uses only ASCII characters
 }
-def treeiter(root: T, getch: Callable[[T], Iterable[T]] = lambda n: n.children, style: str = 'fancy') -> Iterable[Tuple[str, T]]:
+
+
+def treeiter(
+	root: T,
+	getch: Callable[[T], Iterable[T]] = lambda n: n.children,
+	style: str = 'fancy') -> Iterable[Tuple[str, Optional[T]]]:
 	"""
 	generates a pair (trunk, node) using supplied function to iterate over starting node (root)
 	where elem is element of any type that can be iterated over using getch function and,
@@ -154,11 +163,11 @@ def treeiter(root: T, getch: Callable[[T], Iterable[T]] = lambda n: n.children, 
 	trunk is tree's current trunk at that element
 	style can be either 'fancy' (default) or 'ascii' used for building "trunk"
 	"""
-	def extend(trunk, by):
+	def extend(trunk: str, by: str) -> str:
 		"extend the trunk by a new brach"
 		return trunk.replace('L', ' ').replace('T', 'I') + by
 
-	def lpos_iter(in_iter):
+	def lpos_iter(in_iter: Iterable[Optional[T]]) -> Iterable[Tuple[bool, Optional[T]]]:
 		"an iterator which returns tuple (lpos, item) where lpos is True if this is the last item from the original iterator"
 		has_prev, prev = False, None
 		for child in in_iter:
@@ -168,78 +177,84 @@ def treeiter(root: T, getch: Callable[[T], Iterable[T]] = lambda n: n.children, 
 		if has_prev:
 			yield True, prev
 
-	def walk(node, trunk):
+	def walk(node: Optional[T], trunk: str) -> Iterable[Tuple[str, Optional[T]]]:
 		"Visits node and its children in order"
 		yield (trunk, node)
 		for is_last, child in lpos_iter(getch(node)):
 			yield from walk(child, extend(trunk, 'L' if is_last else 'T'))
 
-	def stylize(trunk):
+	def stylize(trunk: str) -> str:
 		"stylize the trunk if style is not None"
 		return trunk if style is None else ''.join(branch_styles[style][c] for c in trunk)
 
 	for trunk, node in walk(root, ''):
 		yield (stylize(trunk), node)
 
+
 def formatted(
-		rows: Iterable[TableRow],
-		columns: Optional[List[str]] = None,
-		none_value: str = '',
-		dash: str = '-',
-		title_encoded: bool = False) -> Iterable[List[str]]:
+	rows: Iterable[TableRow],
+	columns: Optional[List[str]] = None,
+	none_value: str = '',
+	dash: str = '-',
+	title_encoded: bool = False) -> Iterable[List[str]]:
 	"return formatted rows. Inspired by https://bitbucket.org/astanin/python-formatted"
 
 	table = [list(r) for r in zip(*rows)]  # transpose
 	if not table and not columns:
 		return
+
 	if columns:
 		if table:
 			if len(columns) != len(table):
 				raise ValueError('Number of columns in data must match column definitions')
-			columns = [PPCol.create(c, v, title_encoded=title_encoded) for c, v in zip(columns, table)]
+			cols = [PPCol.create(c, v, title_encoded=title_encoded) for c, v in zip(columns, table)]
 		else:
-			columns = [PPCol.create(c, title_encoded=title_encoded) for c in columns]
+			cols = [PPCol.create(c, title_encoded=title_encoded) for c in columns]
 	else:
-		columns = [PPCol.create('', v) for v in table]
+		cols = [PPCol.create('', v) for v in table]
 
 	# stage 1: transform table values to formatted string
-	table = [[c.fmtval(v) if v != None else none_value for v in vals] for c, vals in zip(columns, table)]
+	table = [[c.fmtval(v) if v is not None else none_value for v in vals] for c, vals in zip(cols, table)]
 
 	# adjust max width, if needed, before the second stage
-	for col, w in zip(columns, [max(len(v) for v in vals) for vals in table]):
+	for col, w in zip(cols, [max(len(v) for v in vals) for vals in table]):
 		if w > col.width:
 			col.width = w
 
 	# stage 2: justify table values
-	table = [[c.justify(v) for v in vals] for c, vals in zip(columns, table)]
+	table = [[c.justify(v) for v in vals] for c, vals in zip(cols, table)]
 
-	if [c.title for c in columns if c.title]: # print column titles if at least one is non-blank
-		yield [c.justify(c.title) for c in columns]
+	if any(c.title for c in cols if c.title):  # print column titles if at least one is non-blank
+		yield [c.justify(c.title) for c in cols]
 		if dash:
-			yield [''.ljust(c.width, dash) for c in columns]
+			yield [''.ljust(c.width, dash) for c in cols]
 
-	yield from zip(*table) # transform table to rows
+	yield from zip(*table)  # transform table to rows
+
 
 def tabulate(
-		rows: Iterable[TableRow],
-		columns: Optional[List[str]] = None,
-		sep: str = ' ',
-		end: str = '\n',
-		none_value: str = '',
-		dash: str = '-',
-		title_encoded: bool = False) -> str:
+	rows: Iterable[TableRow],
+	columns: Optional[List[str]] = None,
+	sep: str = ' ',
+	end: str = '\n',
+	none_value: str = '',
+	dash: str = '-',
+	title_encoded: bool = False) -> str:
 	"format and return table as a string"
+
 	return end.join(sep.join(row) for row in formatted(rows, columns, none_value=none_value, dash=dash, title_encoded=title_encoded))
 
+
 def pprint(
-		rows: Iterable[TableRow],
-		columns: Optional[List[str]] = None,
-		sep: str = ' ',
-		end: str = '\n',
-		none_value: str = '',
-		dash: str = '-',
-		title_encoded: bool = False,
-		file: Optional[TextIO] = None,
-		flush: bool = False) -> None:
+	rows: Iterable[TableRow],
+	columns: Optional[List[str]] = None,
+	sep: str = ' ',
+	end: str = '\n',
+	none_value: str = '',
+	dash: str = '-',
+	title_encoded: bool = False,
+	file: Optional[TextIO] = None,
+	flush: bool = False) -> None:
 	"print formatted tabular data"
+
 	print(tabulate(rows, columns, sep=sep, end=end, none_value=none_value, dash=dash, title_encoded=title_encoded), file=file, flush=flush)

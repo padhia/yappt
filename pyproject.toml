@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "yappt"
+description = "Yet another pretty print for tables and trees"
+authors = [{ name = "Paresh Adhia", email = "padhia+github@gmail.com" }]
+readme = "README.md"
+requires-python = ">= 3.9"
+classifiers = ["Programming Language :: Python :: 3"]
+dynamic = ["version"]
+
+[tool.setuptools]
+packages = ["yappt", "yappt.types"]
+
+[tool.setuptools.dynamic]
+version = { attr = "yappt.__version__" }
+
+[tool.setuptools.package-data]
+"*" = ["py.typed"]
+
+[tool.ruff]
+line-length = 130
+target-version = "py39"
+extend-select = ["I"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]

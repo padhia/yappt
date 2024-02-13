@@ -7,7 +7,7 @@ T = TypeVar("T")
 
 def treeiter(root: T, leaves: Callable[[T], Iterable[T]], width: int = 2, gap: int = 1) -> Iterable[tuple[str, T]]:
     """
-    accepts an iterator that iterates over a tree depth first, and returns a new iterator that iterates over
+    accepts an iterable that iterates over a tree depth first, and returns a new iterable that iterates over
     the original tree, but also returns a visual tree trunk representation
 
     Args:

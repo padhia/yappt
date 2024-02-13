@@ -7,7 +7,7 @@ T = TypeVar("T")
 
 
 def iter_more(xs: Iterable[T]) -> Iterable[tuple[bool, T]]:
-    """retrun a new iterator based on the given iterator, that peeks past the current value for existence and returns
+    """retrun a new iterable based on the given iterable, that peeks past the current value for existence and returns
     tuple (more, item), where more is True if current is not the last item
 
     Args:

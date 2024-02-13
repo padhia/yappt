@@ -1,7 +1,7 @@
 "tabulate (print in a grid) an iterable of either dataclass objects, or Sequences"
 from dataclasses import fields, is_dataclass
 from itertools import chain, islice, zip_longest
-from typing import Any, Callable, Iterable, Iterator, Optional, Sequence, TypeVar
+from typing import Any, Callable, Iterable, Optional, Sequence, TypeVar
 
 from .grid import GridStyle, iter_with_grid
 from .types import Column, HAlign
@@ -55,7 +55,7 @@ def tabulate_iter(
     default_fmtspc: dict[type, str] = {},
     grid_style: Optional[GridStyle] = None,
     default_grid_style: Optional[GridStyle] = None,
-) -> Iterator[str]:
+) -> Iterable[str]:
     """
     accepts an Iterable of either dataclass instances or Sequences, and returns an Iterable of strings of data in a grid
 
@@ -69,7 +69,7 @@ def tabulate_iter(
         default_grid_style: grid style to use when $GRID_STYLE is not set
 
     Returns:
-        Iterator over formatted, aligned and tabulated strings
+        Iterable over formatted, aligned and tabulated strings
     """
     it = iter(rows)
     try:
@@ -77,27 +77,28 @@ def tabulate_iter(
     except StopIteration:
         return
 
+    it = chain([first], it)
     if is_dataclass(first):
-        cols, formatted_rows = iter_dc_fmt(rows, first.__class__, default_fmtspc)  # type: ignore
+        cols, formatted_rows = iter_dc_fmt(it, first.__class__, default_fmtspc)  # type: ignore
     elif isinstance(first, Sequence):
-        cols, formatted_rows = iter_seq_fmt(rows, types or [type(c) for c in first], headers, default_fmtspc)
+        cols, formatted_rows = iter_seq_fmt(it, types or [type(c) for c in first], headers, default_fmtspc)
     else:
         raise TypeError(f"Input to tabulate() must be an Iterable of either dataclass or a Sequnce, not {type(first)}")
 
-    data = chain([[m.title for m in cols]], formatted_rows)
+    it = chain([[m.title for m in cols]], formatted_rows)
     if peek > 0:
-        data = aligned_seq_iter(data, [m.alignment for m in cols], peek + 1)  # +1 to adjust for the header row
-    data = iter_with_grid(iter(data), num_headers=1, grid_style=grid_style, default_grid_style=default_grid_style)
+        it = aligned_seq_iter(it, [m.alignment for m in cols], peek + 1)  # +1 to adjust for the header row
+    it = iter_with_grid(iter(it), num_headers=1, grid_style=grid_style, default_grid_style=default_grid_style)
 
-    yield from data
+    yield from it
 
 
 def iter_seq_fmt(
     rows: Iterable[Sequence[Any]],
-    types: Sequence[type],
+    types: Sequence[type[Any]],
     headers: Optional[Sequence[str]] = None,
     default_fmtspec: dict[type, str] = {},
-) -> tuple[list[Column[Any]], Iterator[Sequence[str]]]:
+) -> tuple[list[Column[Any]], Iterable[Sequence[str]]]:
     if headers is None:
         headers = [f"_{e}" for e, _ in enumerate(types, start=1)]
     cols = [Column.from_type(h, t, default_fmtspec=default_fmtspec) for h, t in zip(headers, types)]
@@ -111,7 +112,7 @@ def iter_seq_fmt(
 
 def iter_dc_fmt(
     rows: Iterable[T], DC_Type: type[T], default_fmtspec: dict[type, str] = {}
-) -> tuple[list[Column[Any]], Iterator[Sequence[str]]]:
+) -> tuple[list[Column[Any]], Iterable[Sequence[str]]]:
     cols = Column.from_dataclass(DC_Type, default_fmtspec)
     attrs = [f.name for f in fields(DC_Type)]  # type: ignore
     xs = [(c.format, n) for c, n in zip(cols, attrs)]
@@ -122,7 +123,7 @@ def iter_dc_fmt(
     return (cols, (as_seq(o) for o in rows))
 
 
-def aligned_seq_iter(rows: Iterable[Sequence[str]], alignments: list[HAlign], peek: int = 200) -> Iterator[list[str]]:
+def aligned_seq_iter(rows: Iterable[Sequence[str]], alignments: list[HAlign], peek: int = 200) -> Iterable[list[str]]:
     "Accepts an Iterable of sequences of text, and returns an iterable of sequence of aligned texts"
 
     def splitcols(row: Sequence[str]) -> Iterable[Sequence[str]]:

@@ -38,7 +38,8 @@ def test_dataclass() -> None:
 
 def test_list() -> None:
     rows = [[1, "one"], [2, "two"], [999, None]]
-    actual = "\n".join(tabulate_iter(rows, headers=["C1", "C2"], types=[int, Optional[str]]))
+    lines = tabulate_iter(rows, headers=["C1", "C2"], types=[int, Optional[str]])
+    actual = "\n".join(lines)
 
     assert actual == dedent(
         """\
@@ -54,7 +55,8 @@ def test_list() -> None:
 
 def test_embedded_nl() -> None:
     rows = [[1, "one"], [2, "two\nthree"], [999, None]]
-    actual = "\n".join(tabulate_iter(rows, headers=["C1", "C2"], types=[int, Optional[str]]))
+    lines = tabulate_iter(rows, headers=["C1", "C2"], types=[int, Optional[str]])
+    actual = "\n".join(lines)
 
     assert actual == dedent(
         """\
@@ -71,9 +73,8 @@ def test_embedded_nl() -> None:
 
 def test_default_fmtspec() -> None:
     rows = [[1, "one"], [2, "two"], [3, None]]
-    actual = "\n".join(
-        tabulate_iter(rows, headers=["C1", "C2"], types=[Optional[int], Optional[str]], default_fmtspc={int: "03d"})
-    )
+    lines = tabulate_iter(rows, headers=["C1", "C2"], types=[Optional[int], Optional[str]], default_fmtspc={int: "03d"})
+    actual = "\n".join(lines)
 
     assert actual == dedent(
         """\
@@ -89,7 +90,8 @@ def test_default_fmtspec() -> None:
 
 def test_peek() -> None:
     rows = [[1, "one"], [2, "two"], [999, None]]
-    actual = "\n".join(tabulate_iter(rows, headers=["C1", "C2"], types=[int, Optional[str]], peek=2))
+    lines = tabulate_iter(rows, headers=["C1", "C2"], types=[int, Optional[str]], peek=2)
+    actual = "\n".join(lines)
 
     assert actual == dedent(
         """\

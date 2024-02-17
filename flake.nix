@@ -1,40 +1,52 @@
 {
   description = "Build Python package yappt";
-  inputs.nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+
+  inputs.nixpkgs.url     = "github:nixos/nixpkgs/nixos-unstable";
+  inputs.flake-utils.url = "github:numtide/flake-utils";
 
   outputs = { self, nixpkgs, flake-utils }:
+  flake-utils.lib.eachDefaultSystem (system:
   let
-    forAllSystems = fn:
-      let
-        systems = [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ];
-      in
-        nixpkgs.lib.genAttrs systems (system: fn (import nixpkgs { inherit system; }));
+    pkgs    = nixpkgs.legacyPackages.${system};
+    pythons = ["python311" "python312"];
+    python3 = pkgs.lib.replaceStrings ["."] [""] pkgs.python3.libPrefix;
 
-    pyPkgs = { pkgs, python3 }:
+    pyModules = py:
       let
-        callPackage = pkgs.lib.callPackageWith (pkgs // python3.pkgs);
+        callPackage = pkgs.lib.callPackageWith pkgs.${py}.pkgs;
       in {
         yappt = callPackage ./yappt.nix {};
       };
 
-    devShells = forAllSystems (pkgs: with pkgs;
-      { default = pkgs.mkShell {
-          name = "yappt";
-          venvDir = "./.venv";
-          buildInputs = with pkgs.python311Packages; [
-            python
-            venvShellHook
-            build
-            pytest
-            pkgs.ruff
-          ];
-        };
-      }
-    );
+    devShells =
+      let
+        mkDevShell = py:
+          pkgs.mkShell {
+            name = "yappt";
+            venvDir = "./.venv";
+            buildInputs = with pkgs.${py}.pkgs; [
+              pkgs.${py}
+              pkgs.ruff
+              venvShellHook
+              build
+              pytest
+            ];
+          };
+        allPyDevs = pkgs.lib.genAttrs pythons mkDevShell;
+      in allPyDevs // {
+        default = allPyDevs.${python3};
+      };
 
-    packages = forAllSystems (pkgs: with pkgs; { default = (pyPkgs { inherit pkgs; python3 = python311; }).yappt; });
+    packages =
+      let
+        mkPackage = py: {
+          name  = "${py}Packages";
+          value = pyModules py;
+        };
+      in
+        builtins.listToAttrs (builtins.map mkPackage pythons);
 
   in {
-    inherit devShells packages pyPkgs;
-  };
+    inherit devShells packages;
+  });
 }

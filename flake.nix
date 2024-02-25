@@ -1,52 +1,16 @@
 {
-  description = "Build Python package yappt";
+  description = "Yet another pretty printer for tables and trees";
 
-  inputs.nixpkgs.url     = "github:nixos/nixpkgs/nixos-unstable";
-  inputs.flake-utils.url = "github:numtide/flake-utils";
+  inputs = {
+    nixpkgs.url   = "github:nixos/nixpkgs/nixos-unstable";
+    nix-utils.url = "github:padhia/nix-utils";
 
-  outputs = { self, nixpkgs, flake-utils }:
-  flake-utils.lib.eachDefaultSystem (system:
-  let
-    pkgs    = nixpkgs.legacyPackages.${system};
-    pythons = ["python311" "python312"];
-    python3 = pkgs.lib.replaceStrings ["."] [""] pkgs.python3.libPrefix;
+    nix-utils.inputs.nixpkgs.follows = "nixpkgs";
+  };
 
-    pyModules = py:
-      let
-        callPackage = pkgs.lib.callPackageWith pkgs.${py}.pkgs;
-      in {
-        yappt = callPackage ./yappt.nix {};
-      };
-
-    devShells =
-      let
-        mkDevShell = py:
-          pkgs.mkShell {
-            name = "yappt";
-            venvDir = "./.venv";
-            buildInputs = with pkgs.${py}.pkgs; [
-              pkgs.${py}
-              pkgs.ruff
-              venvShellHook
-              build
-              pytest
-            ];
-          };
-        allPyDevs = pkgs.lib.genAttrs pythons mkDevShell;
-      in allPyDevs // {
-        default = allPyDevs.${python3};
-      };
-
-    packages =
-      let
-        mkPackage = py: {
-          name  = "${py}Packages";
-          value = pyModules py;
-        };
-      in
-        builtins.listToAttrs (builtins.map mkPackage pythons);
-
-  in {
-    inherit devShells packages;
-  });
+  outputs = { self, nixpkgs, nix-utils }:
+    nix-utils.lib.mkPyFlake {
+      pkgs = { yappt = import ./yappt.nix; };
+      deps = [ "pytest" ];
+    };
 }

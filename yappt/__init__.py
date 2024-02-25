@@ -1,5 +1,5 @@
 "yappt package"
-__version__ = "0.3.1"
+__version__ = "0.3.2rc1"
 
 from .tabulate import tabulate, tabulate_iter
 from .treeiter import treeiter

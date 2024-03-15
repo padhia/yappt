@@ -1,7 +1,8 @@
 "tabulate (print in a grid) an iterable of either dataclass objects, or Sequences"
+import sys
 from dataclasses import fields, is_dataclass
 from itertools import chain, islice, zip_longest
-from typing import Any, Callable, Iterable, Optional, Sequence, TypeVar
+from typing import Any, Callable, Iterable, Optional, Sequence, TextIO, TypeVar
 
 from .grid import GridStyle, iter_with_grid
 from .types import Column, HAlign
@@ -18,6 +19,7 @@ def tabulate(
     default_fmtspc: dict[type, str] = {},
     grid_style: Optional[GridStyle] = None,
     default_grid_style: Optional[GridStyle] = None,
+    file: TextIO = sys.stdout,
 ) -> None:
     """
     pretty print rows of data in tabular form
@@ -43,7 +45,7 @@ def tabulate(
         grid_style=grid_style,
         default_grid_style=default_grid_style,
     ):
-        print(line)
+        print(line, file=file)
 
 
 def tabulate_iter(

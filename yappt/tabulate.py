@@ -6,6 +6,7 @@ from typing import Any, Callable, Iterable, Optional, Sequence, TextIO, TypeVar
 
 from .grid import GridStyle, iter_with_grid
 from .types import Column, HAlign
+from .util import DEFAULT_FMTSPEC
 
 T = TypeVar("T")
 
@@ -16,7 +17,7 @@ def tabulate(
     types: Optional[Sequence[type]] = None,
     *,
     peek: int = 200,
-    default_fmtspc: dict[type, str] = {},
+    default_fmtspc: dict[type, str] = DEFAULT_FMTSPEC,
     grid_style: Optional[GridStyle] = None,
     default_grid_style: Optional[GridStyle] = None,
     file: TextIO = sys.stdout,
@@ -54,7 +55,7 @@ def tabulate_iter(
     types: Optional[Sequence[type]] = None,
     *,
     peek: int = 200,
-    default_fmtspc: dict[type, str] = {},
+    default_fmtspc: dict[type, str] = DEFAULT_FMTSPEC,
     grid_style: Optional[GridStyle] = None,
     default_grid_style: Optional[GridStyle] = None,
 ) -> Iterable[str]:
@@ -99,7 +100,7 @@ def formatted_seq_iter(
     rows: Iterable[Sequence[Any]],
     types: Sequence[type[Any]],
     headers: Optional[Sequence[str]] = None,
-    default_fmtspec: dict[type, str] = {},
+    default_fmtspec: dict[type, str] = DEFAULT_FMTSPEC,
 ) -> tuple[list[Column[Any]], Iterable[Sequence[str]]]:
     if headers is None:
         headers = [f"_{e}" for e, _ in enumerate(types, start=1)]

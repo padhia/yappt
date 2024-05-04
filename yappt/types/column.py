@@ -1,11 +1,12 @@
 "class to store metadata for formatting a column"
+
 import datetime as dt
 from dataclasses import Field, dataclass, fields
 from decimal import Decimal
 from enum import Enum
 from typing import Callable, Generic, Optional, TypeVar, get_type_hints
 
-from ..util import bare_type, format_bool
+from ..util import DEFAULT_FMTSPEC, bare_type, format_bool
 from .duration import Duration
 from .prettyint import PrettyInt
 
@@ -79,7 +80,7 @@ class Column(Generic[T]):
         type_hint: type[T],
         format_spec: Optional[str] = None,
         align: Optional[str] = None,
-        default_fmtspec: dict[type, str] = {},
+        default_fmtspec: dict[type, str] = DEFAULT_FMTSPEC,
     ) -> "Column[T]":
         """
         Instantiate a Column instance for a Python type

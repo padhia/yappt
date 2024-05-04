@@ -1,4 +1,5 @@
 "test tabulate with an iterator as an input"
+
 from textwrap import dedent
 from typing import Optional
 

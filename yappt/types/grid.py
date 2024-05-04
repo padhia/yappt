@@ -1,4 +1,5 @@
 "classes that represent grid drawing styles"
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Iterable, Sequence

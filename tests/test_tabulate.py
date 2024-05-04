@@ -1,4 +1,5 @@
 "test tabulate"
+
 from dataclasses import dataclass, field
 from datetime import date
 from textwrap import dedent

@@ -1,9 +1,21 @@
 "utility types and functions"
+
+import datetime as dt
 import re
+from decimal import Decimal
 from types import UnionType
 from typing import Iterable, TypeVar, Union, get_origin
 
 T = TypeVar("T")
+
+DEFAULT_FMTSPEC: dict[type, str] = {
+    int: ",d",
+    float: ",.2f",
+    Decimal: ",.2f",
+    dt.date: "%Y-%m-%d",
+    dt.time: "%H:%M:%S",
+    dt.datetime: "%Y-%m-%d %H:%M:%S",
+}
 
 
 def iter_more(xs: Iterable[T]) -> Iterable[tuple[bool, T]]:

@@ -1,4 +1,5 @@
 "test types"
+
 import pytest
 
 from yappt import Duration, PrettyInt, format_bool

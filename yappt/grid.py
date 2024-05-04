@@ -1,4 +1,5 @@
 "print rows as a grid"
+
 import logging
 import os
 from itertools import chain, islice

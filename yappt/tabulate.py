@@ -1,10 +1,13 @@
 "tabulate (print in a grid) an iterable of either dataclass objects, or Sequences"
+
+import sys
 from dataclasses import fields, is_dataclass
 from itertools import chain, islice, zip_longest
-from typing import Any, Callable, Iterable, Optional, Sequence, TypeVar
+from typing import Any, Callable, Iterable, Optional, Sequence, TextIO, TypeVar
 
 from .grid import GridStyle, iter_with_grid
 from .types import Column, HAlign
+from .util import DEFAULT_FMTSPEC
 
 T = TypeVar("T")
 
@@ -15,9 +18,10 @@ def tabulate(
     types: Optional[Sequence[type]] = None,
     *,
     peek: int = 200,
-    default_fmtspc: dict[type, str] = {},
+    default_fmtspc: dict[type, str] = DEFAULT_FMTSPEC,
     grid_style: Optional[GridStyle] = None,
     default_grid_style: Optional[GridStyle] = None,
+    file: TextIO = sys.stdout,
 ) -> None:
     """
     pretty print rows of data in tabular form
@@ -43,7 +47,7 @@ def tabulate(
         grid_style=grid_style,
         default_grid_style=default_grid_style,
     ):
-        print(line)
+        print(line, file=file)
 
 
 def tabulate_iter(
@@ -52,7 +56,7 @@ def tabulate_iter(
     types: Optional[Sequence[type]] = None,
     *,
     peek: int = 200,
-    default_fmtspc: dict[type, str] = {},
+    default_fmtspc: dict[type, str] = DEFAULT_FMTSPEC,
     grid_style: Optional[GridStyle] = None,
     default_grid_style: Optional[GridStyle] = None,
 ) -> Iterable[str]:
@@ -79,9 +83,9 @@ def tabulate_iter(
 
     it = chain([first], it)
     if is_dataclass(first):
-        cols, formatted_rows = iter_dc_fmt(it, first.__class__, default_fmtspc)  # type: ignore
+        cols, formatted_rows = formatted_obj_iter(it, first.__class__, default_fmtspc)  # type: ignore
     elif isinstance(first, Sequence):
-        cols, formatted_rows = iter_seq_fmt(it, types or [type(c) for c in first], headers, default_fmtspc)
+        cols, formatted_rows = formatted_seq_iter(it, types or [type(c) for c in first], headers, default_fmtspc)
     else:
         raise TypeError(f"Input to tabulate() must be an Iterable of either dataclass or a Sequnce, not {type(first)}")
 
@@ -93,11 +97,11 @@ def tabulate_iter(
     yield from it
 
 
-def iter_seq_fmt(
+def formatted_seq_iter(
     rows: Iterable[Sequence[Any]],
     types: Sequence[type[Any]],
     headers: Optional[Sequence[str]] = None,
-    default_fmtspec: dict[type, str] = {},
+    default_fmtspec: dict[type, str] = DEFAULT_FMTSPEC,
 ) -> tuple[list[Column[Any]], Iterable[Sequence[str]]]:
     if headers is None:
         headers = [f"_{e}" for e, _ in enumerate(types, start=1)]
@@ -110,7 +114,7 @@ def iter_seq_fmt(
     return (cols, (as_seq(o) for o in rows))
 
 
-def iter_dc_fmt(
+def formatted_obj_iter(
     rows: Iterable[T], DC_Type: type[T], default_fmtspec: dict[type, str] = {}
 ) -> tuple[list[Column[Any]], Iterable[Sequence[str]]]:
     cols = Column.from_dataclass(DC_Type, default_fmtspec)

@@ -1,6 +1,6 @@
 # yappt
 
-Yet another pretty print for tables and trees.
+Yet another pretty printer for tables and trees.
 
 **Note:** Versions `0.3.0` and later aren't compatible with earlier versions
 

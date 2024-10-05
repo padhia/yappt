@@ -1,12 +1,17 @@
-{ lib, buildPythonPackage, setuptools, pytest }:
-buildPythonPackage rec {
-  pname     = "yappt";
-  version   = "0.3.2";
+{
+  lib,
+  buildPythonPackage,
+  setuptools,
+  pytest,
+}:
+buildPythonPackage {
+  pname = "yappt";
+  version = "0.3.2";
   pyproject = true;
-  src       = ./.;
+  src = ./.;
 
-  nativeBuildInputs = [ setuptools pytest ];
-  doCheck           = false;
+  build-system = [ setuptools ];
+  nativeCheckInputs = [ pytest ];
 
   meta = with lib; {
     homepage    = "https://github.com/padhia/yappt";

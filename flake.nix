@@ -1,18 +1,31 @@
 {
   inputs.nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
   inputs.flake-utils.url = "github:numtide/flake-utils";
+  inputs.pyproject-nix.url = "github:pyproject-nix/pyproject.nix";
 
-  outputs = { self, nixpkgs, flake-utils }:
+  inputs.pyproject-nix.inputs.nixpkgs.follows = "nixpkgs";
+
+  outputs = { self, nixpkgs, flake-utils, pyproject-nix, ... }:
   let
-    overlays.default = final: prev: {
+    inherit (nixpkgs.lib) composeManyExtensions;
+
+    project = pyproject-nix.lib.project.loadPyproject {
+      projectRoot = ./.;
+    };
+
+    pkgOverlay = final: prev: {
       pythonPackagesExtensions = prev.pythonPackagesExtensions ++ [
         (py-final: py-prev: {
-          yappt = py-final.callPackage ./yappt.nix {};
+          yappt = project.renderers.buildPythonPackage { inherit py-final; };
         })
       ];
     };
 
-    eachSystem = system:
+    overlays.default = composeManyExtensions [
+      pkgOverlay
+    ];
+
+    buildSystem = system:
     let
       pkgs = import nixpkgs {
         inherit system;
@@ -38,6 +51,6 @@
 
   in {
     inherit overlays;
-    inherit (flake-utils.lib.eachDefaultSystem eachSystem) devShells;
+    inherit (flake-utils.lib.eachDefaultSystem buildSystem) devShells;
   };
 }

@@ -1,26 +1,38 @@
 {
-  description = "Yet another pretty printer for tables and trees";
-
   inputs.nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
   inputs.flake-utils.url = "github:numtide/flake-utils";
-  inputs.nix-utils.url = "github:padhia/nix-utils";
 
-  outputs = { nixpkgs, flake-utils, nix-utils, ... }:
+  outputs = { self, nixpkgs, flake-utils }:
   let
-    inherit (nix-utils.outputs.lib) pyDevShell extendPyPkgsWith;
-
-    overlays.default = final: prev:
-      extendPyPkgsWith prev {
-        yappt = ./yappt.nix;
-      };
+    overlays.default = final: prev: {
+      pythonPackagesExtensions = prev.pythonPackagesExtensions ++ [
+        (py-final: py-prev: {
+          yappt = py-final.callPackage ./yappt.nix {};
+        })
+      ];
+    };
 
     eachSystem = system:
     let
-      pkgs = import nixpkgs { inherit system; };
+      pkgs = import nixpkgs {
+        inherit system;
+        config.allowUnfree = true;
+        overlays = [ self.overlays.default ];
+      };
+
+      pyPkgs = pkgs.python312Packages;
+
     in {
-      devShells.default = pyDevShell {
-        inherit pkgs;
+      devShells.default = pkgs.mkShell {
         name = "yappt";
+        venvDir = "./.venv";
+        buildInputs = with pyPkgs; [
+          pkgs.ruff
+          pkgs.uv
+          python
+          venvShellHook
+          pytest
+        ];
       };
     };
 
